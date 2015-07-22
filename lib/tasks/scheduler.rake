@@ -1,10 +1,8 @@
-task :email_delivered_stories => :environment do
-  reporter = DeliveredStoriesReport.new
-  Rails.logger.info "Finding Delivered Stories"
-  reporter.find_stories
-  reporter.print_stories
+task :class_report => :environment do
+  reporter = ClassReporter.new
+  Rails.logger.info "Finding new CS Courses"
+  reporter.find_classes
   Rails.logger.info "Sending Email"
   reporter.email_report
-  reporter.set_report_time
   Rails.logger.info "Done"
 end
