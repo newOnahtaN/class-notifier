@@ -20,7 +20,7 @@ class Course
   end
 
   def to_s
-    @crn + ': ' + @title + ' with ' + @instructor
+    "#{@crn}: #{@course_id} (#{@title}) with #{@instructor} at #{@meet_times} on #{@meet_days}. Seats available #{@seats_available}"
   end
 
   def ==(another_course)

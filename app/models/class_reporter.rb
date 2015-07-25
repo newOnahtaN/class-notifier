@@ -1,10 +1,11 @@
 class ClassReporter
 
   def find_new_classes
-    @new_classes = ["A new CS course"]
+    @new_classes = [Course.new(["20924", "CSCI 800 15", "IN", "Dissertation", "Smirni, Evgenia", "1-12", "W", "0800-0850", "3", "0", "3", "OPEN"])]
+    report_time = Time.now.to_s
     current_classes = term_codes.map {|term_code| collect_classes term_code}.flatten!
     puts current_classes.reject {|current_class| REDIS.get(current_class.crn).present?}
-    current_classes.each {|current_class| REDIS.set(current_class.crn, Time.now.to_s)}
+    current_classes.each {|current_class| REDIS.set(current_class.crn, report_time)}
   end
 
   def term_codes
