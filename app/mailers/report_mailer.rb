@@ -1,5 +1,5 @@
 class ReportMailer < ActionMailer::Base
-  default from: "no-reply@viewthespace.com"
+  default from: 'natesclassnotifier@gmail.com'
 
   def report_mailer new_classes
     @new_classes = new_classes
