@@ -1,39 +1,31 @@
-require 'capybara'
 class ClassReporter
 
   def find_new_classes
     @new_classes = ["A new CS course"]
-    @session = Capybara::Session.new(:selenium)
-    @session.visit "https://courselist.wm.edu/courselist/"
-    node = @session.find_field("term_code")
-    terms = node.all("*").map {|t| t.text}
-    terms.each do  |term|
-      find_differences(REDIS.get(term), query_term(term))
-    end
-
+    current_classes = term_codes.map {|term_code| collect_classes term_code}.flatten!
+    puts current_classes.reject {|current_class| REDIS.get(current_class.crn).present?}
+    current_classes.each {|current_class| REDIS.set(current_class.crn, Time.now.to_s)}
   end
 
-  def query_term term
-    @session.select("Computer Science", from: "term_subj")
-    @session.select(term, from: "term_code")
-    @session.find_button('search').click
-    classes = collect_classes
-    @session.visit "https://courselist.wm.edu/courselist/"
-    return classes
+  def term_codes
+    front_page = HTTParty.get('https://courselist.wm.edu/courselist/', :verify => false).parsed_response
+    Nokogiri::XML(front_page).xpath("//select[@name='term_code']//option")
+      .map {|term| term.attributes['value'].value.to_i}
   end
 
-  def collect_classes
-    @session.all('tr').map do |tr|
-      Rails.logger.info Course.new tr.native.find_elements(:tag_name, 'td')
-    end
-  end
-
-  def known_classes 
-    REDIS.get('known_classes')
-  end
-
-  def refresh_known_classes
-    REDIS.set('known_classes', @new_classes)
+  def collect_classes term_code
+    course_list_page = HTTParty.post('https://courselist.wm.edu/courselist/courseinfo/searchresults',
+                                :body =>
+                                  { :term_code => term_code,
+                                    :term_subj => 'CSCI',
+                                    :attr => 0,
+                                    :levl => 0,
+                                    :status => 0,
+                                    :search => 'Search'
+                                  },
+                                :verify => false)
+    courses = Nokogiri::HTML.parse(course_list_page).xpath('//td').map{|td| td.text.strip}.in_groups_of(12)
+    courses.map!{|course| Course.new course} 
   end
 
   def email_report
